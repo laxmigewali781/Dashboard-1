@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Website Performance Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1c2430;--muted:#667085;--line:#e4e7ec;--c1:#2f6fed;--c2:#f08c2e;--c3:#1fa37a;--c4:#d6455d;--c5:#7a5af8;--hl:#fff6e5;--hlb:#f5c26b}
+@media (prefers-color-scheme:dark){:root{--bg:#10141b;--card:#181e28;--text:#e8ecf2;--muted:#9aa4b2;--line:#2a3342;--c1:#6c9bff;--c2:#ffa94d;--c3:#3fd0a0;--c4:#ff7a90;--c5:#a28cff;--hl:#2a2418;--hlb:#7a5c24}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1200px;margin:0 auto;padding:24px 16px 56px}
+h1{font-size:26px;margin:0 0 4px}
+h2{font-size:18px;margin:36px 0 12px}
+.sub{color:var(--muted);margin:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:20px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kpi .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.kpi .v{font-size:24px;font-weight:650;margin-top:2px}
+.kpi .n{font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.card h3{margin:0 0 2px;font-size:15px}
+.card p.cap{margin:0 0 10px;color:var(--muted);font-size:13px}
+.s12{grid-column:span 12}.s8{grid-column:span 8}.s6{grid-column:span 6}.s4{grid-column:span 4}
+.box{position:relative;height:300px}
+.box.tall{height:340px}
+@media(max-width:860px){.s8,.s6,.s4{grid-column:span 12}.box,.box.tall{height:270px}}
+.insight{background:var(--hl);border:1px solid var(--hlb);border-radius:12px;padding:18px 20px}
+.insight h3{margin:0 0 6px}
+.find{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:6px}
+.find .card h3{font-size:14px}
+.find .card p{margin:4px 0 0;font-size:14px}
+.tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:middle}
+.concl{background:var(--card);border:2px solid var(--c1);border-radius:12px;padding:20px 22px}
+.concl ol{margin:8px 0 0;padding-left:20px}.concl li{margin:6px 0}
+.foot{color:var(--muted);font-size:12px;margin-top:28px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Website Performance Dashboard</h1>
+<p class="sub">50 days of daily analytics &middot; Aug 1 &ndash; Sep 19, 2026 &middot; synthetic dataset</p>
+<div class="kpis" id="kpis"></div>
+
+<h2>1 &middot; Overview</h2>
+<div class="grid">
+  <div class="card s12"><h3>Daily visitors with 7-day average</h3><p class="cap">Steady growth, with a sharp promo surge on Aug 31 &ndash; Sep 3 (shaded).</p><div class="box tall"><canvas id="cTrend"></canvas></div></div>
+  <div class="card s8"><h3>Weekly cycle: traffic vs. conversion rate</h3><p class="cap">Bars: average visitors. Line: conversion rate. They move in opposite directions.</p><div class="box"><canvas id="cDow"></canvas></div></div>
+  <div class="card s4"><h3>Top traffic source (days led)</h3><p class="cap">Share of the 50 days each source was #1.</p><div class="box"><canvas id="cSrc"></canvas></div></div>
+</div>
+
+<h2>2 &middot; Relationships</h2>
+<div class="grid">
+  <div class="card s6"><h3>Ad spend vs. conversions</h3><p class="cap" id="capSpend"></p><div class="box"><canvas id="cSpend"></canvas></div></div>
+  <div class="card s6"><h3>Session length vs. bounce rate</h3><p class="cap" id="capSess"></p><div class="box"><canvas id="cSess"></canvas></div></div>
+</div>
+
+<h2>3 &middot; The hidden pattern: more traffic, lower quality</h2>
+<div class="grid">
+  <div class="card s6"><h3>Visitors vs. conversion rate</h3><p class="cap" id="capVC"></p><div class="box tall"><canvas id="cVC"></canvas></div></div>
+  <div class="card s6"><h3>Promo days vs. normal days</h3><p class="cap">Percent change in the average promo day (Aug 31 &ndash; Sep 3) relative to all other days.</p><div class="box tall"><canvas id="cPromo"></canvas></div></div>
+  <div class="card s6"><h3>Diminishing returns on ad spend</h3><p class="cap">Days grouped into spend quartiles (Q1 = lowest). Bars: revenue per ad dollar. Line: cost per conversion.</p><div class="box"><canvas id="cQuart"></canvas></div></div>
+  <div class="card s6"><h3>Weekly view: traffic grows, conversion rate drifts</h3><p class="cap">Seven full weeks starting Aug 1. Bars: avg visitors. Line: conversion rate.</p><div class="box"><canvas id="cWeek"></canvas></div></div>
+</div>
+
+<h2>4 &middot; Analysis</h2>
+<div class="insight">
+  <h3>Hidden pattern: volume and quality pull in opposite directions</h3>
+  <p style="margin:0" id="headline"></p>
+</div>
+<div class="find" id="finds"></div>
+
+<h2>5 &middot; Conclusion</h2>
+<div class="concl">
+  <strong>Concluding pattern:</strong> <span id="conclLead"></span>
+  <ol id="conclList"></ol>
+</div>
+<p class="foot">Source: website_dashboard_data.xlsx (labelled synthetic in its About sheet, so treat findings as a demonstration, not as real-world traffic). 50 data points means correlations are indicative, not conclusive.</p>
+</div>
+
+<script>
+const DATA = [{"date": "2026-08-01", "dow": "Sat", "vis": 853, "pv": 3218, "br": 0.739, "sess": 2.03, "ad": 136.76, "conv": 22, "rev": 1504.01, "src": "Direct"}, {"date": "2026-08-02", "dow": "Sun", "vis": 748, "pv": 2886, "br": 0.772, "sess": 1.81, "ad": 195.47, "conv": 27, "rev": 1317.51, "src": "Paid Ads"}, {"date": "2026-08-03", "dow": "Mon", "vis": 1339, "pv": 3797, "br": 0.744, "sess": 1.92, "ad": 137.53, "conv": 33, "rev": 2085.04, "src": "Direct"}, {"date": "2026-08-04", "dow": "Tue", "vis": 1432, "pv": 4468, "br": 0.73, "sess": 2.2, "ad": 175.81, "conv": 31, "rev": 1736.89, "src": "Paid Ads"}, {"date": "2026-08-05", "dow": "Wed", "vis": 1226, "pv": 3779, "br": 0.689, "sess": 2.2, "ad": 117.32, "conv": 25, "rev": 1440.8, "src": "Organic Search"}, {"date": "2026-08-06", "dow": "Thu", "vis": 1237, "pv": 3761, "br": 0.69, "sess": 2.57, "ad": 142.81, "conv": 30, "rev": 1550.48, "src": "Social"}, {"date": "2026-08-07", "dow": "Fri", "vis": 1230, "pv": 3851, "br": 0.704, "sess": 2.24, "ad": 116.75, "conv": 26, "rev": 1455.82, "src": "Direct"}, {"date": "2026-08-08", "dow": "Sat", "vis": 896, "pv": 3650, "br": 0.696, "sess": 2.27, "ad": 138.13, "conv": 22, "rev": 1447.61, "src": "Organic Search"}, {"date": "2026-08-09", "dow": "Sun", "vis": 854, "pv": 2975, "br": 0.726, "sess": 1.96, "ad": 179.41, "conv": 26, "rev": 1598.89, "src": "Paid Ads"}, {"date": "2026-08-10", "dow": "Mon", "vis": 1337, "pv": 4602, "br": 0.729, "sess": 2.02, "ad": 89.54, "conv": 21, "rev": 1436.27, "src": "Organic Search"}, {"date": "2026-08-11", "dow": "Tue", "vis": 1543, "pv": 4288, "br": 0.739, "sess": 2.14, "ad": 165.2, "conv": 33, "rev": 2147.13, "src": "Organic Search"}, {"date": "2026-08-12", "dow": "Wed", "vis": 1524, "pv": 4749, "br": 0.702, "sess": 2.18, "ad": 158.32, "conv": 32, "rev": 1940.3, "src": "Organic Search"}, {"date": "2026-08-13", "dow": "Thu", "vis": 1432, "pv": 4641, "br": 0.679, "sess": 2.72, "ad": 129.2, "conv": 29, "rev": 1985.44, "src": "Email"}, {"date": "2026-08-14", "dow": "Fri", "vis": 1392, "pv": 4658, "br": 0.72, "sess": 2.11, "ad": 99.39, "conv": 24, "rev": 1455.22, "src": "Paid Ads"}, {"date": "2026-08-15", "dow": "Sat", "vis": 1004, "pv": 3893, "br": 0.708, "sess": 2.29, "ad": 152.52, "conv": 27, "rev": 1700.13, "src": "Paid Ads"}, {"date": "2026-08-16", "dow": "Sun", "vis": 881, "pv": 3434, "br": 0.76, "sess": 1.89, "ad": 131.47, "conv": 25, "rev": 1405.51, "src": "Direct"}, {"date": "2026-08-17", "dow": "Mon", "vis": 1530, "pv": 4763, "br": 0.702, "sess": 2.52, "ad": 158.14, "conv": 33, "rev": 1927.18, "src": "Paid Ads"}, {"date": "2026-08-18", "dow": "Tue", "vis": 1513, "pv": 4667, "br": 0.724, "sess": 2.4, "ad": 150.76, "conv": 33, "rev": 1775.91, "src": "Email"}, {"date": "2026-08-19", "dow": "Wed", "vis": 1645, "pv": 5617, "br": 0.706, "sess": 2.35, "ad": 206.06, "conv": 38, "rev": 2429.63, "src": "Direct"}, {"date": "2026-08-20", "dow": "Thu", "vis": 1529, "pv": 4820, "br": 0.7, "sess": 2.32, "ad": 141.62, "conv": 31, "rev": 1578.84, "src": "Paid Ads"}, {"date": "2026-08-21", "dow": "Fri", "vis": 1401, "pv": 4036, "br": 0.721, "sess": 2.15, "ad": 114.18, "conv": 25, "rev": 1567.35, "src": "Organic Search"}, {"date": "2026-08-22", "dow": "Sat", "vis": 1016, "pv": 3471, "br": 0.722, "sess": 2.22, "ad": 156.27, "conv": 27, "rev": 1535.11, "src": "Email"}, {"date": "2026-08-23", "dow": "Sun", "vis": 1046, "pv": 3630, "br": 0.735, "sess": 2.05, "ad": 157.7, "conv": 27, "rev": 1755.74, "src": "Direct"}, {"date": "2026-08-24", "dow": "Mon", "vis": 1595, "pv": 5302, "br": 0.711, "sess": 2.11, "ad": 197.57, "conv": 42, "rev": 2625.22, "src": "Email"}, {"date": "2026-08-25", "dow": "Tue", "vis": 1664, "pv": 5384, "br": 0.727, "sess": 2.13, "ad": 179.23, "conv": 40, "rev": 2756.96, "src": "Organic Search"}, {"date": "2026-08-26", "dow": "Wed", "vis": 1655, "pv": 5582, "br": 0.706, "sess": 2.42, "ad": 162.49, "conv": 35, "rev": 2183.46, "src": "Social"}, {"date": "2026-08-27", "dow": "Thu", "vis": 1681, "pv": 5200, "br": 0.717, "sess": 2.71, "ad": 201.22, "conv": 36, "rev": 1748.44, "src": "Paid Ads"}, {"date": "2026-08-28", "dow": "Fri", "vis": 1537, "pv": 4979, "br": 0.735, "sess": 2.37, "ad": 108.39, "conv": 25, "rev": 1439.96, "src": "Organic Search"}, {"date": "2026-08-29", "dow": "Sat", "vis": 1145, "pv": 4416, "br": 0.711, "sess": 2.15, "ad": 127.61, "conv": 28, "rev": 1427.1, "src": "Paid Ads"}, {"date": "2026-08-30", "dow": "Sun", "vis": 1074, "pv": 3891, "br": 0.715, "sess": 2.21, "ad": 117.57, "conv": 24, "rev": 1317.37, "src": "Direct"}, {"date": "2026-08-31", "dow": "Mon", "vis": 3035, "pv": 10059, "br": 0.618, "sess": 3.2, "ad": 245.44, "conv": 60, "rev": 4024.04, "src": "Organic Search"}, {"date": "2026-09-01", "dow": "Tue", "vis": 2839, "pv": 8615, "br": 0.655, "sess": 2.9, "ad": 183.27, "conv": 46, "rev": 2843.96, "src": "Paid Ads"}, {"date": "2026-09-02", "dow": "Wed", "vis": 2796, "pv": 8693, "br": 0.68, "sess": 2.76, "ad": 310.01, "conv": 64, "rev": 3443.61, "src": "Direct"}, {"date": "2026-09-03", "dow": "Thu", "vis": 2674, "pv": 8302, "br": 0.673, "sess": 3.01, "ad": 256.0, "conv": 56, "rev": 2907.39, "src": "Organic Search"}, {"date": "2026-09-04", "dow": "Fri", "vis": 1655, "pv": 4801, "br": 0.687, "sess": 2.47, "ad": 98.52, "conv": 26, "rev": 1513.11, "src": "Paid Ads"}, {"date": "2026-09-05", "dow": "Sat", "vis": 1260, "pv": 4815, "br": 0.684, "sess": 2.53, "ad": 114.45, "conv": 24, "rev": 1216.82, "src": "Paid Ads"}, {"date": "2026-09-06", "dow": "Sun", "vis": 1111, "pv": 3980, "br": 0.688, "sess": 2.2, "ad": 160.97, "conv": 28, "rev": 1511.25, "src": "Organic Search"}, {"date": "2026-09-07", "dow": "Mon", "vis": 1743, "pv": 5583, "br": 0.72, "sess": 2.17, "ad": 179.33, "conv": 37, "rev": 2215.27, "src": "Social"}, {"date": "2026-09-08", "dow": "Tue", "vis": 1843, "pv": 6119, "br": 0.706, "sess": 2.18, "ad": 219.89, "conv": 41, "rev": 2662.21, "src": "Direct"}, {"date": "2026-09-09", "dow": "Wed", "vis": 1964, "pv": 6504, "br": 0.661, "sess": 2.84, "ad": 251.99, "conv": 46, "rev": 2836.02, "src": "Organic Search"}, {"date": "2026-09-10", "dow": "Thu", "vis": 1916, "pv": 6450, "br": 0.656, "sess": 2.83, "ad": 164.5, "conv": 37, "rev": 1637.33, "src": "Email"}, {"date": "2026-09-11", "dow": "Fri", "vis": 1747, "pv": 5547, "br": 0.704, "sess": 2.38, "ad": 115.37, "conv": 32, "rev": 1914.44, "src": "Social"}, {"date": "2026-09-12", "dow": "Sat", "vis": 1221, "pv": 4388, "br": 0.699, "sess": 2.13, "ad": 75.38, "conv": 25, "rev": 1460.81, "src": "Organic Search"}, {"date": "2026-09-13", "dow": "Sun", "vis": 1196, "pv": 4401, "br": 0.675, "sess": 2.49, "ad": 159.37, "conv": 22, "rev": 1330.63, "src": "Social"}, {"date": "2026-09-14", "dow": "Mon", "vis": 1937, "pv": 5381, "br": 0.746, "sess": 2.27, "ad": 121.55, "conv": 34, "rev": 2301.71, "src": "Organic Search"}, {"date": "2026-09-15", "dow": "Tue", "vis": 2055, "pv": 5833, "br": 0.688, "sess": 2.36, "ad": 135.46, "conv": 37, "rev": 1687.96, "src": "Email"}, {"date": "2026-09-16", "dow": "Wed", "vis": 2099, "pv": 6023, "br": 0.664, "sess": 2.69, "ad": 128.58, "conv": 38, "rev": 2069.23, "src": "Paid Ads"}, {"date": "2026-09-17", "dow": "Thu", "vis": 1974, "pv": 5825, "br": 0.729, "sess": 2.43, "ad": 145.07, "conv": 36, "rev": 2215.64, "src": "Paid Ads"}, {"date": "2026-09-18", "dow": "Fri", "vis": 1858, "pv": 6131, "br": 0.743, "sess": 2.46, "ad": 187.31, "conv": 35, "rev": 1697.87, "src": "Organic Search"}, {"date": "2026-09-19", "dow": "Sat", "vis": 1338, "pv": 4648, "br": 0.701, "sess": 2.22, "ad": 155.5, "conv": 31, "rev": 2072.53, "src": "Social"}];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C = {c1:css('--c1'),c2:css('--c2'),c3:css('--c3'),c4:css('--c4'),c5:css('--c5'),text:css('--text'),muted:css('--muted'),line:css('--line')};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>location.reload());
+Chart.defaults.color = C.muted; Chart.defaults.borderColor = C.line;
+Chart.defaults.font.family = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+Chart.defaults.maintainAspectRatio = false;
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+
+// ---------- helpers ----------
+const sum = a => a.reduce((x,y)=>x+y,0), mean = a => sum(a)/a.length;
+const fmt = (n,d=0) => n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+function reg(xs,ys){const mx=mean(xs),my=mean(ys);let sxy=0,sxx=0,syy=0;xs.forEach((x,i)=>{sxy+=(x-mx)*(ys[i]-my);sxx+=(x-mx)**2;syy+=(ys[i]-my)**2});const b=sxy/sxx;return{slope:b,icpt:my-b*mx,r:sxy/Math.sqrt(sxx*syy)}}
+function trendLine(xs,ys,label,color){const g=reg(xs,ys),lo=Math.min(...xs),hi=Math.max(...xs);return{type:'line',label,data:[{x:lo,y:g.icpt+g.slope*lo},{x:hi,y:g.icpt+g.slope*hi}],borderColor:color,borderWidth:2,borderDash:[6,4],pointRadius:0,order:0}}
+
+DATA.forEach(r=>{
+  r.cr = r.conv/r.vis*100;
+  r.rpv = r.rev/r.vis;
+  r.wk = r.dow==='Sat'||r.dow==='Sun';
+  r.promo = r.date>='2026-08-31' && r.date<='2026-09-03';
+});
+const promo = DATA.filter(r=>r.promo), base = DATA.filter(r=>!r.promo);
+const wkend = DATA.filter(r=>r.wk), wkday = DATA.filter(r=>!r.wk);
+const totalVis=sum(DATA.map(r=>r.vis)), totalRev=sum(DATA.map(r=>r.rev)), totalConv=sum(DATA.map(r=>r.conv)), totalAd=sum(DATA.map(r=>r.ad));
+const crAll = totalConv/totalVis*100;
+const crOf = rows => sum(rows.map(r=>r.conv))/sum(rows.map(r=>r.vis))*100;
+const avg = (rows,k)=>mean(rows.map(r=>r[k]));
+
+// ---------- KPIs ----------
+const kp=[
+ ['Total visitors',fmt(totalVis),'avg '+fmt(totalVis/50)+' / day'],
+ ['Conversions',fmt(totalConv),'avg '+fmt(totalConv/50,1)+' / day'],
+ ['Revenue','$'+fmt(totalRev),'$'+fmt(totalRev/totalConv,2)+' per conversion'],
+ ['Conversion rate',fmt(crAll,2)+'%','conversions / visitors'],
+ ['Ad spend','$'+fmt(totalAd),'ROAS '+fmt(totalRev/totalAd,1)+'x'],
+ ['Avg bounce rate',fmt(avg(DATA,'br')*100,1)+'%','avg session '+fmt(avg(DATA,'sess'),2)+' min']
+];
+document.getElementById('kpis').innerHTML = kp.map(k=>`<div class="kpi"><div class="l">${k[0]}</div><div class="v">${k[1]}</div><div class="n">${k[2]}</div></div>`).join('');
+
+// ---------- 1. trend with promo band ----------
+const labels = DATA.map(r=>r.date.slice(5));
+const ma = DATA.map((_,i)=>{const s=DATA.slice(Math.max(0,i-6),i+1);return s.length<3?null:mean(s.map(r=>r.vis))});
+const promoBand = {id:'promoBand',beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x}}=ch;const i0=DATA.findIndex(r=>r.promo),i1=DATA.length-1-[...DATA].reverse().findIndex(r=>r.promo);const w=(x.getPixelForValue(1)-x.getPixelForValue(0))/2;ctx.save();ctx.fillStyle=C.c2+'33';ctx.fillRect(x.getPixelForValue(i0)-w,a.top,x.getPixelForValue(i1)-x.getPixelForValue(i0)+2*w,a.bottom-a.top);ctx.fillStyle=C.c2;ctx.font='12px system-ui';ctx.fillText('Promo',x.getPixelForValue(i0)-w+6,a.top+14);ctx.restore()}};
+new Chart(cTrend,{type:'line',data:{labels,datasets:[
+ {label:'Visitors',data:DATA.map(r=>r.vis),borderColor:C.c1,backgroundColor:C.c1+'22',fill:true,tension:.25,pointRadius:2},
+ {label:'7-day average',data:ma,borderColor:C.c3,borderWidth:2.5,pointRadius:0,tension:.3}]},
+ options:{interaction:{mode:'index',intersect:false},scales:{x:{ticks:{maxTicksLimit:12}},y:{beginAtZero:true,title:{display:true,text:'Visitors'}}}},plugins:[promoBand]});
+
+// ---------- day of week ----------
+const order=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const byDow = order.map(d=>DATA.filter(r=>r.dow===d));
+new Chart(cDow,{data:{labels:order,datasets:[
+ {type:'bar',label:'Avg visitors',data:byDow.map(g=>avg(g,'vis')),backgroundColor:order.map(d=>d==='Sat'||d==='Sun'?C.c2:C.c1),yAxisID:'y',order:2},
+ {type:'line',label:'Conversion rate (%)',data:byDow.map(g=>crOf(g)),borderColor:C.c4,backgroundColor:C.c4,borderWidth:3,pointRadius:5,yAxisID:'y1',order:1}]},
+ options:{scales:{y:{beginAtZero:true,title:{display:true,text:'Visitors'}},y1:{position:'right',min:1.5,max:3,grid:{drawOnChartArea:false},title:{display:true,text:'Conv. rate %'}}}}});
+
+// ---------- source doughnut ----------
+const srcCount={};DATA.forEach(r=>srcCount[r.src]=(srcCount[r.src]||0)+1);
+const srcKeys=Object.keys(srcCount).sort((a,b)=>srcCount[b]-srcCount[a]);
+new Chart(cSrc,{type:'doughnut',data:{labels:srcKeys,datasets:[{data:srcKeys.map(k=>srcCount[k]),backgroundColor:[C.c1,C.c2,C.c3,C.c5,C.c4],borderColor:'transparent'}]},
+ options:{cutout:'58%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} days (${(c.raw/50*100).toFixed(0)}%)`}}}}});
+
+// ---------- 2. scatter: spend vs conversions ----------
+const gs = reg(DATA.map(r=>r.ad),DATA.map(r=>r.conv));
+document.getElementById('capSpend').textContent = `Correlation r = ${gs.r.toFixed(2)}. Each extra $100 of ad spend goes with about ${(gs.slope*100).toFixed(0)} more conversions (before accounting for traffic).`;
+new Chart(cSpend,{type:'scatter',data:{datasets:[
+ {label:'Days',data:DATA.map(r=>({x:r.ad,y:r.conv})),backgroundColor:C.c1+'cc',pointRadius:4},
+ trendLine(DATA.map(r=>r.ad),DATA.map(r=>r.conv),'Trend',C.c4)]},
+ options:{scales:{x:{title:{display:true,text:'Ad spend ($)'}},y:{title:{display:true,text:'Conversions'}}}}});
+
+const gb = reg(DATA.map(r=>r.sess),DATA.map(r=>r.br*100));
+document.getElementById('capSess').textContent = `Correlation r = ${gb.r.toFixed(2)}. Engaged visitors stay longer and leave less: the strongest relationship in the data.`;
+new Chart(cSess,{type:'scatter',data:{datasets:[
+ {label:'Days',data:DATA.map(r=>({x:r.sess,y:r.br*100})),backgroundColor:C.c3+'cc',pointRadius:4},
+ trendLine(DATA.map(r=>r.sess),DATA.map(r=>r.br*100),'Trend',C.c4)]},
+ options:{scales:{x:{title:{display:true,text:'Avg session (min)'}},y:{title:{display:true,text:'Bounce rate (%)'}}}}});
+
+// ---------- 3. hidden pattern ----------
+const gv = reg(DATA.map(r=>r.vis),DATA.map(r=>r.cr));
+document.getElementById('capVC').textContent = `Correlation r = ${gv.r.toFixed(2)}. The busier the day, the lower the share of visitors who convert.`;
+const grp = (f)=>DATA.filter(f).map(r=>({x:r.vis,y:r.cr,d:r.date}));
+new Chart(cVC,{type:'scatter',data:{datasets:[
+ {label:'Weekday',data:grp(r=>!r.wk&&!r.promo),backgroundColor:C.c1+'cc',pointRadius:5},
+ {label:'Weekend',data:grp(r=>r.wk),backgroundColor:C.c2,pointRadius:5},
+ {label:'Promo days',data:grp(r=>r.promo),backgroundColor:C.c4,pointStyle:'triangle',pointRadius:8},
+ trendLine(DATA.map(r=>r.vis),DATA.map(r=>r.cr),'Trend',C.text)]},
+ options:{scales:{x:{title:{display:true,text:'Visitors'}},y:{title:{display:true,text:'Conversion rate (%)'}}},
+  plugins:{tooltip:{callbacks:{label:c=>c.raw.d?` ${c.raw.d}: ${fmt(c.raw.x)} visitors, ${c.raw.y.toFixed(2)}%`:''}}}}});
+
+const pct=(a,b)=>(a/b-1)*100;
+const pm = [
+ ['Visitors',pct(avg(promo,'vis'),avg(base,'vis'))],
+ ['Conversions',pct(avg(promo,'conv'),avg(base,'conv'))],
+ ['Revenue',pct(avg(promo,'rev'),avg(base,'rev'))],
+ ['Ad spend',pct(avg(promo,'ad'),avg(base,'ad'))],
+ ['Avg session',pct(avg(promo,'sess'),avg(base,'sess'))],
+ ['Bounce rate',pct(avg(promo,'br'),avg(base,'br'))],
+ ['Conversion rate',pct(crOf(promo),crOf(base))],
+ ['Revenue / visitor',pct(sum(promo.map(r=>r.rev))/sum(promo.map(r=>r.vis)),sum(base.map(r=>r.rev))/sum(base.map(r=>r.vis)))]
+];
+new Chart(cPromo,{type:'bar',data:{labels:pm.map(p=>p[0]),datasets:[{data:pm.map(p=>p[1]),backgroundColor:pm.map(p=>p[1]>=0?C.c3:C.c4)}]},
+ options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw>=0?'+':''}${c.raw.toFixed(1)}%`}}},scales:{x:{title:{display:true,text:'% change vs. normal days'}}}}});
+
+// spend quartiles
+const sorted=[...DATA].sort((a,b)=>a.ad-b.ad);
+const qs=[0,1,2,3].map(i=>sorted.slice(Math.round(i*12.5),Math.round((i+1)*12.5)));
+const qRoas=qs.map(g=>sum(g.map(r=>r.rev))/sum(g.map(r=>r.ad)));
+const qCpa=qs.map(g=>sum(g.map(r=>r.ad))/sum(g.map(r=>r.conv)));
+new Chart(cQuart,{data:{labels:qs.map((g,i)=>`Q${i+1} (~$${Math.round(avg(g,'ad'))}/day)`),datasets:[
+ {type:'bar',label:'Revenue per ad $',data:qRoas,backgroundColor:C.c1,yAxisID:'y'},
+ {type:'line',label:'Cost per conversion ($)',data:qCpa,borderColor:C.c4,backgroundColor:C.c4,borderWidth:3,pointRadius:5,yAxisID:'y1'}]},
+ options:{scales:{y:{min:0,title:{display:true,text:'Revenue per $ of ads'}},y1:{position:'right',min:0,grid:{drawOnChartArea:false},title:{display:true,text:'$ per conversion'}}}}});
+
+// weekly
+const wk=[0,1,2,3,4,5,6].map(i=>DATA.slice(i*7,i*7+7));
+new Chart(cWeek,{data:{labels:wk.map(g=>'Wk of '+g[0].date.slice(5)),datasets:[
+ {type:'bar',label:'Avg visitors',data:wk.map(g=>avg(g,'vis')),backgroundColor:C.c1,yAxisID:'y'},
+ {type:'line',label:'Conversion rate (%)',data:wk.map(g=>crOf(g)),borderColor:C.c4,backgroundColor:C.c4,borderWidth:3,pointRadius:5,yAxisID:'y1'}]},
+ options:{scales:{y:{beginAtZero:true,title:{display:true,text:'Visitors'}},y1:{position:'right',min:1.5,max:3,grid:{drawOnChartArea:false},title:{display:true,text:'Conv. rate %'}}}}});
+
+// ---------- 4. analysis text ----------
+const wkdCR=crOf(wkday), wkeCR=crOf(wkend);
+const wkdRPV=sum(wkday.map(r=>r.rev))/sum(wkday.map(r=>r.vis)), wkeRPV=sum(wkend.map(r=>r.rev))/sum(wkend.map(r=>r.vis));
+const pre=DATA.filter(r=>r.date<'2026-08-31'&&!r.wk), post=DATA.filter(r=>r.date>'2026-09-03'&&!r.wk);
+const aov=totalRev/totalConv;
+const promoROAS=sum(promo.map(r=>r.rev))/sum(promo.map(r=>r.ad)), baseROAS=sum(base.map(r=>r.rev))/sum(base.map(r=>r.ad));
+const gm = (()=>{ // conv ~ vis + ad (OLS via normal equations)
+  const n=DATA.length,X=DATA.map(r=>[1,r.vis,r.ad]),y=DATA.map(r=>r.conv);
+  const A=[[0,0,0],[0,0,0],[0,0,0]],B=[0,0,0];
+  X.forEach((x,k)=>{for(let i=0;i<3;i++){B[i]+=x[i]*y[k];for(let j=0;j<3;j++)A[i][j]+=x[i]*x[j]}});
+  // gaussian elimination
+  for(let i=0;i<3;i++){let p=i;for(let r=i+1;r<3;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;[A[i],A[p]]=[A[p],A[i]];[B[i],B[p]]=[B[p],B[i]];
+    for(let r=i+1;r<3;r++){const f=A[r][i]/A[i][i];for(let c=i;c<3;c++)A[r][c]-=f*A[i][c];B[r]-=f*B[i]}}
+  const b=[0,0,0];for(let i=2;i>=0;i--){let s=B[i];for(let j=i+1;j<3;j++)s-=A[i][j]*b[j];b[i]=s/A[i][i]}return b})();
+const marginalCpa = 1/gm[2];
+
+document.getElementById('headline').innerHTML =
+ `The data is built around an obvious story (growth, weekly cycle, promo spike, spend driving sales). Underneath it sits a less obvious one: <strong>conversion efficiency falls as traffic rises</strong> (r = ${gv.r.toFixed(2)} between visitors and conversion rate). Revenue still grows with traffic, but each additional visitor is worth less, and the extra visitors are what the advertising budget is buying.`;
+
+const finds=[
+ ['Growth is real, and it lasts',`Weekday visitors averaged ${fmt(avg(pre,'vis'))} before the promo and ${fmt(avg(post,'vis'))} after it, up ${fmt(pct(avg(post,'vis'),avg(pre,'vis')),0)}%. The promo did not decay back to the old baseline.`],
+ ['Weekends: fewer visitors, better ones',`Weekdays average ${fmt(avg(wkday,'vis'))} visitors, weekends ${fmt(avg(wkend,'vis'))}. Yet weekends convert at ${wkeCR.toFixed(2)}% vs ${wkdCR.toFixed(2)}% and earn $${wkeRPV.toFixed(2)} per visitor vs $${wkdRPV.toFixed(2)}. Weekend visitors also view more pages per visit.`],
+ ['The promo bought volume, not quality',`Visitors roughly doubled (+${fmt(pm[0][1],0)}%) and revenue rose +${fmt(pm[2][1],0)}%, slightly less than traffic. Conversion rate slipped ${Math.abs(pm[6][1]).toFixed(0)}% and revenue per visitor ${Math.abs(pm[7][1]).toFixed(0)}%. Engagement did improve (longer sessions, lower bounce), so the extra visitors were interested, just less likely to buy.`],
+ ['Diminishing returns on ad spend',`Revenue per ad dollar drops from ${qRoas[0].toFixed(1)}x on the lowest-spend quartile to ${qRoas[3].toFixed(1)}x on the highest, and cost per conversion rises from $${qCpa[0].toFixed(2)} to roughly $${Math.max(...qCpa).toFixed(2)} in the mid-to-high tiers. Controlling for traffic, one extra conversion costs roughly $${marginalCpa.toFixed(0)} in ads at the margin, versus a $${(totalAd/totalConv).toFixed(2)} average.`],
+ ['Order value is fixed, so conversions are everything',`Revenue per conversion is almost constant at about $${aov.toFixed(0)}. Revenue differences come from how many people convert, not from how much they spend, so the only profit lever here is conversion count and rate.`],
+ ['Engagement is the cleanest signal',`Session length and bounce rate are tightly linked (r = ${gb.r.toFixed(2)}). Promo days had the longest sessions (${avg(promo,'sess').toFixed(1)} min) and the lowest bounce (${(avg(promo,'br')*100).toFixed(0)}%).`],
+ ['Source mix looks like noise',`Organic Search leads (${srcCount['Organic Search']} days), Paid Ads follows (${srcCount['Paid Ads']}). Paid Ads and Social appear only slightly more often on weekends or high-spend days, a gap too small to treat as a pattern with 50 days.`]
+];
+document.getElementById('finds').innerHTML=finds.map(f=>`<div class="card"><h3>${f[0]}</h3><p>${f[1]}</p></div>`).join('');
+
+document.getElementById('conclLead').textContent =
+ `This website has a volume-versus-quality trade-off. Traffic and revenue grow together, but conversion rate, revenue per visitor and ad efficiency all weaken as visitor counts climb. Money buys attention more easily than it buys buyers.`;
+document.getElementById('conclList').innerHTML=[
+ `<strong>Don't judge campaigns on visitors alone.</strong> The promo nearly doubled traffic, yet conversion rate and revenue per visitor fell. Track conversion rate and revenue per visitor next to traffic.`,
+ `<strong>Weekends are an under-used asset.</strong> They have the best conversion rate (${wkeCR.toFixed(1)}%) and revenue per visitor, with lower traffic. Test weekend-specific offers and content, not just weekday volume.`,
+ `<strong>Watch the spend curve.</strong> Ads are still profitable at the margin (about $${marginalCpa.toFixed(0)} per conversion against roughly $${aov.toFixed(0)} of revenue), but efficiency falls as spend rises from the lowest tier to the middle ones, then levels off. Review budgets in the middle tiers, where each extra dollar buys the least.`,
+ `<strong>The next growth lever is conversion rate, not traffic.</strong> Visitors are already engaged (long sessions, falling bounce). Improving landing pages, checkout and offers should lift revenue more than buying more visitors, particularly since order value is flat.`
+].map(x=>`<li>${x}</li>`).join('');
+</script>
+</body>
+</html>
